@@ -1,0 +1,42 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+require_relative 'vagrant_ros_guest_plugin.rb'
+
+# To enable rsync folder share change to false
+$number_of_nodes = 1
+$vm_mem = "512"
+$vb_gui = false
+
+$hostname = "proxy-%02d"
+$boximage = "rancherio/rancheros"  #either box-cutter/ubuntu1404-docker or rancherio/rancheros
+
+def config_node(node, hostname, i)
+  node.vm.hostname = hostname
+  node_ip = "172.19.8.#{i+149}"
+  server_ip = "172.19.8.100"
+  node.vm.network 'private_network', ip: node_ip
+  node.vm.provision :shell, :inline => "docker run -e CATTLE_AGENT_IP=#{node_ip} -e WAIT=true -v /var/run/docker.sock:/var/run/docker.sock rancher/agent:latest http://#{server_ip}:8080", :privileged => true
+end
+
+Vagrant.configure(2) do |config|
+  config.vm.box   = $boximage
+
+  (1..$number_of_nodes).each do |i|
+    hostname = $hostname % i
+
+    config.vm.define hostname do |node|
+        node.vm.provider "virtualbox" do |vb|
+            vb.memory = $vm_mem
+            vb.gui = $vb_gui
+        end
+
+        config_node(node, hostname, i)
+
+        node.vm.synced_folder ".", "/opt/rancher", type: "rsync",
+            rsync__exclude: ".git/", rsync__args: ["--verbose", "--archive", "--delete", "--copy-links"],
+            disabled: true
+        
+    end
+  end
+end
