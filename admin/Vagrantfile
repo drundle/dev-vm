@@ -9,7 +9,7 @@ $vm_mem = "1024"
 $vb_gui = false
 
 $hostname = "admin-%02d"
-$boximage = "rancherio/rancheros"  #either box-cutter/ubuntu1404-docker or rancherio/rancheros
+$boximage = "box-cutter/ubuntu1404-docker"  #either box-cutter/ubuntu1404-docker or rancherio/rancheros
 
 def config_node(node, hostname, i)
   node.vm.hostname = hostname
